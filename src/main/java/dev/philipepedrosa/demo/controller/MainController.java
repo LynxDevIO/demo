@@ -1,5 +1,5 @@
-package dev.philipepedrosa.demo;
+package dev.philipepedrosa.demo.controller;
 
-public class HelloController {
+public class MainController {
 
 }
