@@ -1,6 +1,7 @@
 module dev.philipepedrosa.demo {
     requires javafx.controls;
     requires javafx.fxml;
+    requires java.sql;
 
 
     opens dev.philipepedrosa.demo to javafx.fxml;
