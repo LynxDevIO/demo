@@ -20,10 +20,11 @@ public class AlunoDAO implements IAlunoDAO {
      */
 
     @Override
-    public void create(Aluno aluno) {
+    public Optional<Aluno> create(Aluno aluno) {
         String sql = "insert into alunos (nome, maioridade, curso, sexo) values(?,?,?,?)";
+
         try (Connection conn = ConnectionFactory.getConnection()) {
-            PreparedStatement ps = conn.prepareStatement(sql);
+            PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             ps.setString(1, aluno.getNome());
             ps.setBoolean(2, aluno.isMaioridade());
             ps.setString(3, aluno.getCurso().toString());
@@ -31,10 +32,18 @@ public class AlunoDAO implements IAlunoDAO {
             ps.executeUpdate();
             ps.close();
 
+            ResultSet rs = ps.getGeneratedKeys();
+            rs.next();
+            var matricula = rs.getLong(1);
+            aluno.setMatricula(matricula);
+
             System.out.println("BANCO DE DADOS: Aluno " + aluno.getNome() + " criado com sucesso!");
+
+            return Optional.of(aluno);
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            System.err.println("Erro ao inserir aluno \"" + aluno.getNome() + "\" no banco de dados. Erro \"" + e.getMessage() + "\"");
         }
+        return Optional.empty();
     }
 
     @Override
@@ -97,25 +106,25 @@ public class AlunoDAO implements IAlunoDAO {
 
     @Override
     public Optional<Aluno> findByID(Long matricula) {
-        Optional<Aluno> aluno = Optional.empty();
+        Optional<Aluno> optionalAluno = Optional.empty();
         String sql = "select * from alunos where matricula = ?";
         try (Connection conn = ConnectionFactory.getConnection()) {
+            Aluno aluno = new Aluno();
             PreparedStatement ps = conn.prepareStatement(sql);
             ps.setLong(1, matricula);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                aluno = Optional.of(new Aluno());
-                aluno.get().setMatricula(rs.getLong("matricula"));
-                aluno.get().setNome(rs.getString("nome"));
-                aluno.get().setMaioridade(rs.getBoolean("maioridade"));
-                aluno.get().setCurso(Cursos.valueOf(rs.getString("curso")));
-                aluno.get().setSexo(rs.getString("sexo"));
+                aluno.setMatricula(rs.getLong("matricula"));
+                aluno.setNome(rs.getString("nome"));
+                aluno.setMaioridade(rs.getBoolean("maioridade"));
+                aluno.setCurso(Cursos.valueOf(rs.getString("curso")));
+                aluno.setSexo(rs.getString("sexo"));
             }
+            optionalAluno = Optional.of(aluno);
         } catch (SQLException e) {
             System.err.println("Erro ao buscar aluno: " + e.getMessage());
         }
-        System.out.println("BANCO DE DADOS: aluno " + matricula + " encontrado com sucesso!");
-        return aluno;
+        return optionalAluno;
     }
 
     @Override

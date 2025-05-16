@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface IAlunoDAO {
-    void create(Aluno aluno);
+    Optional<Aluno> create(Aluno aluno);
     void updateByID(Long id, Aluno aluno);
     void delete(Long matricula);
     List<Aluno> findAll();
