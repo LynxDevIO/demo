@@ -1,13 +1,16 @@
 package dev.philipepedrosa.demo.dao;
 
-import dev.philipepedrosa.demo.config.ConnectionFactory;
-import dev.philipepedrosa.demo.model.Aluno;
-import dev.philipepedrosa.demo.model.Cursos;
-
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+
+import dev.philipepedrosa.demo.config.ConnectionFactory;
+import dev.philipepedrosa.demo.model.Aluno;
 
 public class AlunoDAO implements IAlunoDAO {
     /*
@@ -22,12 +25,11 @@ public class AlunoDAO implements IAlunoDAO {
     @Override
     public Optional<Aluno> create(Aluno aluno) {
         String sql = "insert into alunos (nome, maioridade, curso, sexo) values(?,?,?,?)";
-
         try (Connection conn = ConnectionFactory.getConnection()) {
             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             ps.setString(1, aluno.getNome());
             ps.setBoolean(2, aluno.isMaioridade());
-            ps.setString(3, aluno.getCurso().toString());
+            ps.setString(3, aluno.getCurso());
             ps.setString(4, aluno.getSexo());
             ps.executeUpdate();
             ps.close();
@@ -47,13 +49,30 @@ public class AlunoDAO implements IAlunoDAO {
     }
 
     @Override
+    public Aluno update(Aluno aluno) {
+        try (Connection conn = ConnectionFactory.getConnection()) {
+            String sql = "update alunos set nome = ?, maioridade = ?, curso = ?, sexo = ? where matricula = ?";
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setString(1, aluno.getNome());
+            ps.setBoolean(2, aluno.isMaioridade());
+            ps.setString(3, aluno.getCurso());
+            ps.setString(4, aluno.getSexo());
+            ps.setLong(5, aluno.getMatricula());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException();
+        }
+        return aluno;
+    }
+
+    @Override
     public void updateByID(Long matricula, Aluno aluno) {
         String sql = "update alunos set nome = ?, maioridade = ?, curso = ?, sexo = ? where matricula = ?";
         try (Connection conn = ConnectionFactory.getConnection()) {
             PreparedStatement ps = conn.prepareStatement(sql);
             ps.setString(1, aluno.getNome());
             ps.setBoolean(2, aluno.isMaioridade());
-            ps.setString(3, aluno.getCurso().toString());
+            ps.setString(3, aluno.getCurso());
             ps.setString(4, aluno.getSexo());
             ps.setLong(5, matricula);
             ps.executeUpdate();
@@ -87,13 +106,12 @@ public class AlunoDAO implements IAlunoDAO {
         try (Connection conn = ConnectionFactory.getConnection()) {
             Statement st = conn.createStatement();
             ResultSet rs = st.executeQuery(sql);
-
             while (rs.next()) {
                 Aluno aluno = new Aluno();
                 aluno.setMatricula(rs.getLong("matricula"));
                 aluno.setNome(rs.getString("nome"));
                 aluno.setMaioridade(rs.getBoolean("maioridade"));
-                aluno.setCurso(Cursos.valueOf(rs.getString("curso")));
+                aluno.setCurso(rs.getString("curso"));
                 aluno.setSexo(rs.getString("sexo"));
                 alunos.add(aluno);
             }
@@ -117,7 +135,7 @@ public class AlunoDAO implements IAlunoDAO {
                 aluno.setMatricula(rs.getLong("matricula"));
                 aluno.setNome(rs.getString("nome"));
                 aluno.setMaioridade(rs.getBoolean("maioridade"));
-                aluno.setCurso(Cursos.valueOf(rs.getString("curso")));
+                aluno.setCurso(rs.getString("curso"));
                 aluno.setSexo(rs.getString("sexo"));
             }
             optionalAluno = Optional.of(aluno);
@@ -128,26 +146,26 @@ public class AlunoDAO implements IAlunoDAO {
     }
 
     @Override
-    public List<Aluno> findByCurso(Cursos curso) {
+    public List<Aluno> findByCurso(String curso) {
         List<Aluno> alunos = new ArrayList<>();
         String sql = "select * from alunos where curso = ?";
         try (Connection conn = ConnectionFactory.getConnection()) {
             PreparedStatement ps = conn.prepareStatement(sql);
-            ps.setString(1, curso.toString());
+            ps.setString(1, curso);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 Aluno aluno = new Aluno();
                 aluno.setMatricula(rs.getLong("matricula"));
                 aluno.setNome(rs.getString("nome"));
                 aluno.setMaioridade(rs.getBoolean("maioridade"));
-                aluno.setCurso(Cursos.valueOf(rs.getString("curso")));
+                aluno.setCurso(rs.getString("curso"));
                 aluno.setSexo(rs.getString("sexo"));
                 alunos.add(aluno);
             }
         } catch (SQLException e) {
             System.err.println("Erro ao buscar alunos por curso: " + e.getMessage());
         }
-        System.out.println("BANCO DE DADOS: alunos do curso " + curso.toString() + " encontrados com sucesso!");
+        System.out.println("BANCO DE DADOS: alunos do curso " + curso + " encontrados com sucesso!");
         return alunos;
     }
 }
