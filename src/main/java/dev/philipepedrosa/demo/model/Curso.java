@@ -14,6 +14,13 @@ public class Curso {
         this.area = area;
     }
 
+    public Curso(Long codigo, String sigla, String nome, Area area) {
+        this.codigo = codigo;
+        this.sigla = sigla;
+        this.nome = nome;
+        this.area = area;
+    }
+
     public String getSigla() {
         return sigla;
     }
